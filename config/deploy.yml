@@ -1,0 +1,73 @@
+# Name of your application. Used to uniquely configure containers.
+service: respite-backend
+
+# Name of the container image.
+image: respite/respite-backend
+
+# Require a recent Kamal 2 release so config semantics stay predictable.
+minimum_version: 2.10.0
+
+# Default app role. Destination files define the actual hosts.
+servers:
+  web: []
+
+proxy:
+  ssl: true
+  host: api.respite.placeholder.example
+  app_port: 80
+  healthcheck:
+    path: /up
+    interval: 3
+    timeout: 10
+
+registry:
+  server: ghcr.io
+  username: respite
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+
+builder:
+  arch: amd64
+  context: .
+  dockerfile: Dockerfile
+
+env:
+  clear:
+    RAILS_ENV: production
+    RAILS_LOG_LEVEL: info
+    FORCE_SSL: "true"
+    MAILER_HOST: api.respite.placeholder.example
+    CREEM_SUCCESS_URL: https://app.respite.placeholder.example/pro/success
+    CREEM_CANCEL_URL: https://app.respite.placeholder.example/pro/cancel
+    CLAIM_LINK_BASE_URL: respite://claim
+    ALLOWED_ORIGINS: https://app.respite.placeholder.example
+    RAILS_MAX_THREADS: "5"
+    WEB_CONCURRENCY: "2"
+  secret:
+    - RAILS_MASTER_KEY
+    - DATABASE_URL
+    - REDIS_URL
+    - CREEM_API_KEY
+    - CREEM_WEBHOOK_SECRET
+    - SUPPORT_API_KEY
+    - ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY
+    - ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY
+    - ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT
+
+aliases:
+  shell: app exec --interactive --reuse "bash"
+  console: app exec --interactive --reuse "bin/rails console"
+  logs: app logs -f
+  dbprepare: app exec --primary --reuse "bin/rails db:prepare"
+  migrate: app exec --primary --reuse "bin/rails db:migrate"
+
+ssh:
+  user: deploy
+
+boot:
+  limit: 1
+  wait: 5
+
+deploy_timeout: 60
+drain_timeout: 30
+retain_containers: 5

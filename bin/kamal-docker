@@ -1,0 +1,25 @@
+#!/bin/sh
+set -eu
+
+if [ ! -f "Gemfile" ] || [ ! -f "config/deploy.yml" ]; then
+  echo "Run this script from the backend directory." >&2
+  exit 1
+fi
+
+docker run --rm -it \
+  -v "$PWD:/workdir" \
+  -v "${SSH_AUTH_SOCK:-/tmp/ssh-auth.sock}:/ssh-agent" \
+  -w /workdir \
+  -e SSH_AUTH_SOCK=/ssh-agent \
+  -e KAMAL_REGISTRY_PASSWORD \
+  -e CREEM_API_KEY \
+  -e CREEM_WEBHOOK_SECRET \
+  -e SUPPORT_API_KEY \
+  -e ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY \
+  -e ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY \
+  -e ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT \
+  -e DATABASE_URL \
+  -e REDIS_URL \
+  -e POSTGRES_PASSWORD \
+  -e RAILS_MASTER_KEY \
+  ghcr.io/basecamp/kamal:2.10.1 "$@"

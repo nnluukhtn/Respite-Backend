@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+
+echo "Deployment completed. Verify the destination health endpoint and run a smoke test."

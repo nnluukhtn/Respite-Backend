@@ -1,0 +1,38 @@
+servers:
+  web:
+    - staging-app-1.respite.internal
+
+proxy:
+  host: api-staging.respite.placeholder.example
+  ssl: true
+
+env:
+  clear:
+    RAILS_LOG_LEVEL: debug
+    FORCE_SSL: "true"
+    MAILER_HOST: api-staging.respite.placeholder.example
+    CREEM_SUCCESS_URL: https://staging.respite.placeholder.example/pro/success
+    CREEM_CANCEL_URL: https://staging.respite.placeholder.example/pro/cancel
+    CLAIM_LINK_BASE_URL: respite-staging://claim
+    ALLOWED_ORIGINS: https://staging.respite.placeholder.example
+    WEB_CONCURRENCY: "1"
+
+accessories:
+  postgres:
+    image: postgres:17
+    host: staging-db-1.respite.internal
+    port: "127.0.0.1:5432:5432"
+    env:
+      clear:
+        POSTGRES_DB: respite_backend_staging
+        POSTGRES_USER: respite_backend
+      secret:
+        - POSTGRES_PASSWORD
+    directories:
+      - data:/var/lib/postgresql/data
+  redis:
+    image: redis:7.4
+    host: staging-cache-1.respite.internal
+    port: "127.0.0.1:6379:6379"
+    directories:
+      - data:/data

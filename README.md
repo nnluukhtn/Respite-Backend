@@ -38,6 +38,38 @@ RBENV_VERSION=3.4.2 rbenv exec bundle exec rspec
 RBENV_VERSION=3.4.2 rbenv exec bundle exec rubocop
 ```
 
+## Deploy With Kamal 2
+
+The repo now includes Kamal 2 deployment scaffolding:
+
+- `config/deploy.yml`
+- `config/deploy.staging.yml`
+- `config/deploy.production.yml`
+- `.kamal/secrets-common.example`
+- `.kamal/secrets-staging.example`
+- `.kamal/secrets-production.example`
+- `bin/kamal-docker`
+
+Suggested first-time setup:
+
+```bash
+cp .kamal/secrets.example .kamal/secrets
+# append values from .kamal/secrets-common.example and the staging or production example as needed
+
+RBENV_VERSION=3.4.2 rbenv exec bundle exec kamal config -d staging
+RBENV_VERSION=3.4.2 rbenv exec bundle exec kamal setup -d staging
+RBENV_VERSION=3.4.2 rbenv exec bundle exec kamal app exec -d staging --primary --reuse "bin/rails db:prepare"
+```
+
+If you prefer Dockerized Kamal instead of the local gem:
+
+```bash
+bin/kamal-docker config -d staging
+bin/kamal-docker setup -d staging
+```
+
+See [docs/kamal-2-deployment-plan.md](/Users/luunguyen/Code/personal/Respite/backend/docs/kamal-2-deployment-plan.md) for the rollout plan and environment decisions still needing real infra values.
+
 ## Main Endpoints
 
 - `POST /api/pro/checkout_sessions`

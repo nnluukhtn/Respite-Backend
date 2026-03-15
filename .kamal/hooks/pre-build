@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+
+echo "Running backend quality gates before image build..."
+if command -v rbenv >/dev/null 2>&1; then
+  RBENV_VERSION=3.4.2 rbenv exec bundle exec rspec
+  XDG_CACHE_HOME=tmp/cache RBENV_VERSION=3.4.2 rbenv exec bundle exec rubocop --no-server
+else
+  echo "Skipping local quality gate hook because rbenv is unavailable in this Kamal runner."
+fi

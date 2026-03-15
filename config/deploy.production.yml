@@ -1,0 +1,23 @@
+servers:
+  web:
+    - prod-app-1.respite.internal
+    - prod-app-2.respite.internal
+
+proxy:
+  host: api.respite.example
+  ssl: false
+
+env:
+  clear:
+    RAILS_LOG_LEVEL: info
+    FORCE_SSL: "true"
+    MAILER_HOST: api.respite.example
+    CREEM_SUCCESS_URL: https://respite.example/pro/success
+    CREEM_CANCEL_URL: https://respite.example/pro/cancel
+    CLAIM_LINK_BASE_URL: respite://claim
+    ALLOWED_ORIGINS: https://respite.example
+    WEB_CONCURRENCY: "2"
+
+boot:
+  limit: 50%
+  wait: 5
