@@ -1,0 +1,19 @@
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  url: <%= ENV["DATABASE_URL"] %>
+
+development:
+  <<: *default
+  database: respite_backend_development
+
+test:
+  <<: *default
+  database: respite_backend_test
+
+production:
+  <<: *default
+  database: respite_backend_production
+  username: <%= ENV.fetch("POSTGRES_USER", "respite_backend") %>
+  password: <%= ENV["POSTGRES_PASSWORD"] %>

@@ -1,0 +1,25 @@
+default: &default
+  solo:
+    creem_product_id: prod_respite_solo
+    creem_variant_ids:
+      - prod_respite_solo
+      - offer_respite_solo
+    license_type: single_seat
+    max_activations: 1
+
+  team:
+    creem_product_id: prod_respite_team
+    creem_variant_ids:
+      - prod_respite_team
+      - offer_respite_team
+    license_type: multi_seat
+    max_activations: 5
+
+development:
+  <<: *default
+
+test:
+  <<: *default
+
+production:
+  <<: *default
