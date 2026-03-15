@@ -29,7 +29,7 @@ class LicenseVariantCatalog
       normalized_ids = Array(product_ids).flatten.compact.map(&:to_s)
 
       all.values.find do |variant|
-        candidate_ids = [variant.creem_product_id, *variant.creem_variant_ids].compact.map(&:to_s)
+        candidate_ids = [ variant.creem_product_id, *variant.creem_variant_ids ].compact.map(&:to_s)
         (candidate_ids & normalized_ids).any?
       end
     end

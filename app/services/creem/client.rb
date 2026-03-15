@@ -107,11 +107,11 @@ module Creem
 
     def build_request(method, uri, body:)
       klass = case method.to_sym
-              when :get then Net::HTTP::Get
-              when :post then Net::HTTP::Post
-              else
+      when :get then Net::HTTP::Get
+      when :post then Net::HTTP::Post
+      else
                 raise ArgumentError, "Unsupported Creem method: #{method}"
-              end
+      end
 
       request = klass.new(uri)
       request.body = JSON.generate(body) if body.present?

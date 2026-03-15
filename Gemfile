@@ -14,6 +14,7 @@ group :development, :test do
   gem "debug", platforms: %i[ mri mingw mswin x64_mingw ], require: "debug/prelude"
   gem "bundler-audit", require: false
   gem "brakeman", require: false
+  gem "rspec-rails", "~> 8.0"
   gem "rubocop-rails-omakase", require: false
 end
 

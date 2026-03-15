@@ -49,7 +49,7 @@ class License < ApplicationRecord
   end
 
   def seats_available
-    [max_activations - current_activations_count, 0].max
+    [ max_activations - current_activations_count, 0 ].max
   end
 
   def revocable?

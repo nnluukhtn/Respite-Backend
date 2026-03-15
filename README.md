@@ -31,6 +31,13 @@ RBENV_VERSION=3.4.2 rbenv exec bundle exec rails db:prepare
 RBENV_VERSION=3.4.2 rbenv exec bundle exec rails server
 ```
 
+## Test And Lint
+
+```bash
+RBENV_VERSION=3.4.2 rbenv exec bundle exec rspec
+RBENV_VERSION=3.4.2 rbenv exec bundle exec rubocop
+```
+
 ## Main Endpoints
 
 - `POST /api/pro/checkout_sessions`

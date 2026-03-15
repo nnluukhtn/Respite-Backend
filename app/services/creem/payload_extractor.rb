@@ -2,22 +2,22 @@ module Creem
   class PayloadExtractor
     class << self
       def event_id(payload)
-        explicit_event_id = first(payload, %w[event_id webhook_id], preferred_hashes: [event_hash(payload)]) ||
+        explicit_event_id = first(payload, %w[event_id webhook_id], preferred_hashes: [ event_hash(payload) ]) ||
           event_hash(payload)&.dig("id") ||
           event_hash(payload)&.dig(:id)
 
         return explicit_event_id if explicit_event_id.present?
 
-        digest_source = [event_type(payload), checkout_id(payload), request_id(payload), payload.to_json].compact.join(":")
+        digest_source = [ event_type(payload), checkout_id(payload), request_id(payload), payload.to_json ].compact.join(":")
         Digest::SHA256.hexdigest(digest_source)
       end
 
       def event_type(payload)
-        first(payload, %w[event_type type event topic], preferred_hashes: [event_hash(payload)])&.to_s
+        first(payload, %w[event_type type event topic], preferred_hashes: [ event_hash(payload) ])&.to_s
       end
 
       def checkout_id(payload)
-        first(payload, %w[checkout_id id], preferred_hashes: [checkout_hash(payload)])
+        first(payload, %w[checkout_id id], preferred_hashes: [ checkout_hash(payload) ])
       end
 
       def request_id(payload)
@@ -25,15 +25,15 @@ module Creem
       end
 
       def order_id(payload)
-        first(payload, %w[order_id id transaction_id sale_id], preferred_hashes: [order_hash(payload)])
+        first(payload, %w[order_id id transaction_id sale_id], preferred_hashes: [ order_hash(payload) ])
       end
 
       def license_id(payload)
-        first(payload, %w[license_id id], preferred_hashes: [license_hash(payload)])
+        first(payload, %w[license_id id], preferred_hashes: [ license_hash(payload) ])
       end
 
       def license_key(payload)
-        first(payload, %w[license_key key code], preferred_hashes: [license_hash(payload)])
+        first(payload, %w[license_key key code], preferred_hashes: [ license_hash(payload) ])
       end
 
       def activation_id(payload)
@@ -47,18 +47,18 @@ module Creem
         first(
           payload,
           %w[email customer_email],
-          preferred_hashes: [customer_hash(payload), license_hash(payload), order_hash(payload)]
+          preferred_hashes: [ customer_hash(payload), license_hash(payload), order_hash(payload) ]
         )&.downcase
       end
 
       def max_activations(payload)
-        value = first(payload, %w[max_activations activation_limit seats seat_count], preferred_hashes: [license_hash(payload)])
+        value = first(payload, %w[max_activations activation_limit seats seat_count], preferred_hashes: [ license_hash(payload) ])
         Integer(value, exception: false)
       end
 
       def status(payload)
         normalize_status(
-          first(payload, %w[status state], preferred_hashes: [license_hash(payload), order_hash(payload), checkout_hash(payload)])
+          first(payload, %w[status state], preferred_hashes: [ license_hash(payload), order_hash(payload), checkout_hash(payload) ])
         )
       end
 

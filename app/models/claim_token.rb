@@ -23,7 +23,7 @@ class ClaimToken < ApplicationRecord
       metadata:
     )
 
-    [record, raw_token]
+    [ record, raw_token ]
   end
 
   def expired?
