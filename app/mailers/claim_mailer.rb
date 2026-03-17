@@ -4,6 +4,6 @@ class ClaimMailer < ApplicationMailer
   def claim_link(email:, claim_url:, license:)
     @claim_url = claim_url
     @license = license
-    mail(to: email, subject: "Your Respite Pro claim link")
+    mail(to: email, subject: "Your Respite license claim link")
   end
 end

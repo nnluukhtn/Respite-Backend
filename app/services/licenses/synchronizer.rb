@@ -42,8 +42,17 @@ module Licenses
       attributes = Creem::PayloadExtractor.attributes(payload)
       variant = default_variant || LicenseVariantCatalog.find_for_product_ids(attributes[:product_ids])
       raise ApiError.new("Unable to map Creem payload to a license variant", code: "variant_mapping_missing") unless variant
+      existing_license = find_existing_license(attributes)
+      resolved_max_activations = attributes[:max_activations] || license_max_activations_for(variant, existing_license)
 
-      license = find_existing_license(attributes) || License.new
+      if resolved_max_activations.blank?
+        raise ApiError.new(
+          "Enterprise licenses require max activations metadata from Creem or manual provisioning",
+          code: "enterprise_capacity_missing"
+        )
+      end
+
+      license = existing_license || License.new
       license.assign_attributes(
         creem_product_id: attributes[:product_ids].first || variant.creem_product_id,
         creem_variant_id: attributes[:product_ids].find { |id| id != variant.creem_product_id },
@@ -51,7 +60,7 @@ module Licenses
         creem_license_id: attributes[:creem_license_id] || license.creem_license_id,
         license_key: attributes[:license_key].presence || license.license_key,
         license_type: variant.license_type,
-        max_activations: attributes[:max_activations] || variant.max_activations,
+        max_activations: resolved_max_activations,
         status: normalized_status_for(attributes[:status], license),
         customer_email: attributes[:customer_email].presence || license.customer_email,
         metadata: license.metadata.merge(
@@ -84,6 +93,13 @@ module Licenses
       elsif attributes[:creem_order_id].present?
         License.find_by(creem_order_id: attributes[:creem_order_id])
       end
+    end
+
+    def license_max_activations_for(variant, existing_license)
+      return existing_license.max_activations if existing_license&.max_activations.present?
+      return variant.max_activations unless variant.custom_capacity
+
+      nil
     end
 
     def variant_for_checkout(checkout_session, payload)

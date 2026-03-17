@@ -7,7 +7,8 @@ class License < ApplicationRecord
 
   enum :license_type, {
     single_seat: "single_seat",
-    multi_seat: "multi_seat"
+    multi_seat: "multi_seat",
+    enterprise: "enterprise"
   }, prefix: true, validate: true
 
   enum :status, {

@@ -22,7 +22,7 @@ RSpec.describe Creem::PayloadExtractor do
           "id" => "chk_123",
           "request_id" => "req_123"
         },
-        "product_id" => "prod_respite_team"
+        "product_id" => "prod_respite_ultimate"
       }
 
       expect(described_class.attributes(payload)).to eq(
@@ -35,7 +35,7 @@ RSpec.describe Creem::PayloadExtractor do
         customer_email: "user@example.com",
         max_activations: 3,
         status: "active",
-        product_ids: [ "prod_respite_team" ]
+        product_ids: [ "prod_respite_ultimate" ]
       )
     end
   end

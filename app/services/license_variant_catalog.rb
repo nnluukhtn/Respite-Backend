@@ -14,7 +14,8 @@ class LicenseVariantCatalog
     :creem_product_id,
     :creem_variant_ids,
     :license_type,
-    :max_activations
+    :max_activations,
+    :custom_capacity
   )
 
   class << self
@@ -49,7 +50,8 @@ class LicenseVariantCatalog
           creem_product_id: value.fetch("creem_product_id"),
           creem_variant_ids: Array(value["creem_variant_ids"]),
           license_type: value.fetch("license_type"),
-          max_activations: Integer(value.fetch("max_activations"))
+          max_activations: value["max_activations"].nil? ? nil : Integer(value.fetch("max_activations")),
+          custom_capacity: ActiveModel::Type::Boolean.new.cast(value["custom_capacity"])
         )
       end
     end

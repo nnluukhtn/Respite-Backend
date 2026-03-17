@@ -1,6 +1,6 @@
 # Respite Backend
 
-Rails API for Respite Pro checkout, licensing, claims, webhooks, and support tooling.
+Rails API for Respite licensing, claims, webhooks, and support tooling.
 
 ## Stack
 
@@ -90,3 +90,4 @@ See [docs/kamal-2-deployment-plan.md](/Users/luunguyen/Code/personal/Respite/bac
 - Claim tokens are one-time, short-lived, and intended for the app return flow.
 - Webhook events are stored idempotently in `vendor_webhook_events`.
 - Variant mapping lives in `config/license_variants.yml`.
+- Product tiers are currently `pro` (1 seat), `ultimate` (3 seats), and `enterprise` (custom seats per company).

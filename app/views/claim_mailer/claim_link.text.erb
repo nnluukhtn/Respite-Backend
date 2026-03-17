@@ -1,6 +1,6 @@
-Use this link to claim your Respite Pro purchase on a device:
+Use this link to claim your Respite license on a device:
 
 <%= @claim_url %>
 
 License type: <%= @license.license_type %>
-Seats: <%= @license.max_activations %>
+Seats: <%= @license.max_activations || "Custom" %>

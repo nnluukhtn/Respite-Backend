@@ -21,7 +21,7 @@ class Creem::PayloadExtractorTest < ActiveSupport::TestCase
         "id" => "chk_123",
         "request_id" => "req_123"
       },
-      "product_id" => "prod_respite_team"
+      "product_id" => "prod_respite_ultimate"
     }
 
     attributes = Creem::PayloadExtractor.attributes(payload)
@@ -34,7 +34,7 @@ class Creem::PayloadExtractorTest < ActiveSupport::TestCase
     assert_equal "user@example.com", attributes[:customer_email]
     assert_equal 3, attributes[:max_activations]
     assert_equal "active", attributes[:status]
-    assert_equal [ "prod_respite_team" ], attributes[:product_ids]
+    assert_equal [ "prod_respite_ultimate" ], attributes[:product_ids]
   end
 
   test "creates a deterministic event id fallback when no explicit event id is present" do

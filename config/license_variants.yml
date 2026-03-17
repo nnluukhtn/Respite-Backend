@@ -1,19 +1,29 @@
 default: &default
-  solo:
-    creem_product_id: prod_respite_solo
+  pro:
+    creem_product_id: prod_respite_pro
     creem_variant_ids:
-      - prod_respite_solo
-      - offer_respite_solo
+      - prod_respite_pro
+      - offer_respite_pro
     license_type: single_seat
     max_activations: 1
 
-  team:
-    creem_product_id: prod_respite_team
+  ultimate:
+    creem_product_id: prod_respite_ultimate
     creem_variant_ids:
-      - prod_respite_team
-      - offer_respite_team
+      - prod_respite_ultimate
+      - offer_respite_ultimate
     license_type: multi_seat
-    max_activations: 5
+    max_activations: 3
+
+  enterprise:
+    creem_product_id: prod_respite_enterprise
+    creem_variant_ids:
+      - prod_respite_enterprise
+      - offer_respite_enterprise
+    license_type: enterprise
+    # Enterprise seat counts come from Creem payload metadata or manual provisioning.
+    custom_capacity: true
+    max_activations:
 
 development:
   <<: *default
