@@ -2,7 +2,7 @@
 service: respite-backend
 
 # Name of the container image.
-image: respite/respite-backend
+image: nnluukhtn/respite-backend
 
 # Require a recent Kamal 2 release so config semantics stay predictable.
 minimum_version: 2.10.0
@@ -22,7 +22,7 @@ proxy:
 
 registry:
   server: ghcr.io
-  username: respite
+  username: nnluukhtn
   password:
     - KAMAL_REGISTRY_PASSWORD
 
