@@ -4,7 +4,7 @@ class CreateClaimTokens < ActiveRecord::Migration[8.1]
       t.uuid :public_id, null: false, default: -> { "gen_random_uuid()" }
       t.references :license, foreign_key: true
       t.references :checkout_session, foreign_key: true
-      t.string :purpose, null: false, default: "checkout_return"
+      t.string :purpose, null: false, default: "desktop_return"
       t.string :token_digest, null: false
       t.datetime :expires_at, null: false
       t.datetime :consumed_at

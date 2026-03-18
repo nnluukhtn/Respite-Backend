@@ -5,26 +5,29 @@ module Licenses
       @synchronizer = synchronizer
     end
 
-    def call(customer_email:, license_key:, device_fingerprint: nil, device_id: nil, device_activation: nil)
-      license = synchronizer.ensure_from_credentials!(
-        customer_email:,
-        license_key:,
-        refresh: false
-      )
+    def call(license_key:, instance_id: nil, activation_record_id: nil, device_activation: nil)
+      license = synchronizer.find_by_license_key(license_key) ||
+        synchronizer.ensure_from_credentials!(
+          license_key:,
+          instance_id:,
+          refresh: true
+        )
 
-      activation = device_activation || find_activation!(license, device_fingerprint, device_id)
+      activation = device_activation || find_activation!(license, instance_id, activation_record_id)
       response = creem_client.deactivate_license(
         license_key: license.license_key || license_key,
-        customer_email: license.customer_email || customer_email,
-        device_fingerprint: activation.device_fingerprint,
-        activation_id: activation.creem_activation_id
+        instance_id: activation.creem_instance_id || instance_id
       )
+
+      synchronizer.upsert_from_license_payload!(response.merge("key" => (license.license_key || license_key)))
 
       activation.update!(
         deactivated_at: Time.current,
+        instance_status: "inactive",
         metadata: activation.metadata.merge("deactivation_response" => response)
       )
-      license.update!(status: :inactive) if license.device_activations.active.none?
+      license.reload
+      license.update!(status: :inactive) if license.current_activations_count.zero? && !license.revoked? && !license.refunded?
 
       license
     end
@@ -33,14 +36,14 @@ module Licenses
 
     attr_reader :creem_client, :synchronizer
 
-    def find_activation!(license, device_fingerprint, device_id)
-      activation = if device_id.present?
-        license.device_activations.active.find_by(public_id: device_id)
-      elsif device_fingerprint.present?
-        license.device_activations.active.find_by(device_fingerprint:)
+    def find_activation!(license, instance_id, activation_record_id)
+      activation = if activation_record_id.present?
+        license.device_activations.active.find_by(public_id: activation_record_id)
+      elsif instance_id.present?
+        license.device_activations.active.find_by(creem_instance_id: instance_id)
       end
 
-      raise ApiError.new("No active device matched the request", status: :not_found, code: "device_activation_not_found") unless activation
+      raise ApiError.new("No active instance matched the request", status: :not_found, code: "instance_not_found") unless activation
 
       activation
     end

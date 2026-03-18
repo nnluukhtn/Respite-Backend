@@ -2,6 +2,8 @@
 
 Last reviewed: March 15, 2026
 
+Update: the repo is now scaffolded for a single-host Kamal deployment that runs PostgreSQL and Redis as Docker accessories on the same host as the app. This is a pragmatic baseline for the current DigitalOcean droplet setup, even though managed data services are still the longer-term recommendation for higher durability.
+
 ## Goal
 
 Deploy the Rails backend with Kamal 2 using the existing Docker image flow, with a clean path for staging and production, zero-downtime app deploys, and explicit handling for PostgreSQL, Redis, and secrets.

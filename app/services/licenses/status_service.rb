@@ -4,10 +4,10 @@ module Licenses
       @synchronizer = synchronizer
     end
 
-    def call(customer_email:, license_key:, refresh: true)
+    def call(license_key:, instance_id:, refresh: true)
       synchronizer.ensure_from_credentials!(
-        customer_email:,
         license_key:,
+        instance_id:,
         refresh:
       )
     end

@@ -18,17 +18,15 @@ module Api
           raise ApiError.new("A license key is not available for this claim yet", status: :conflict, code: "claim_license_key_missing") if license.license_key.blank?
 
           license = Licenses::ActivationService.new.call(
-            customer_email: license.customer_email,
             license_key: license.license_key,
-            device_fingerprint: params.require(:device_fingerprint),
-            device_name: params.require(:device_name),
+            instance_name: params[:instance_name].presence || params[:device_name].presence || params.require(:instance_name),
             claim_token:
           )
 
           render json: {
             entitlement: entitlement_payload(
               license,
-              device_fingerprint: params[:device_fingerprint]
+              instance_id: license.device_activations.active.order(activated_at: :desc).first&.creem_instance_id
             )
           }, status: :created
         end

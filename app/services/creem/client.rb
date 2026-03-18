@@ -8,17 +8,18 @@ module Creem
       @api_key = api_key
     end
 
-    def create_checkout(variant:, checkout_session:, customer_email: nil, success_url: nil, cancel_url: nil)
+    def create_checkout(variant:, checkout_session:, customer_email: nil, success_url: nil, cancel_url: nil, units: 1, metadata: {})
       body = {
         product_id: variant.creem_product_id,
         request_id: checkout_session.public_id,
+        units:,
         success_url: success_url || Rails.configuration.x.creem.success_url,
         cancel_url: cancel_url || Rails.configuration.x.creem.cancel_url,
         customer: customer_email.present? ? { email: customer_email } : nil,
         metadata: {
           checkout_session_id: checkout_session.public_id,
           variant_key: checkout_session.variant_key
-        }
+        }.merge(metadata)
       }.compact
 
       response = request(:post, Rails.configuration.x.creem.checkout_path, body:)
@@ -32,33 +33,27 @@ module Creem
     end
 
     def retrieve_checkout(checkout_id:)
-      request(:get, Rails.configuration.x.creem.checkout_lookup_path, params: { checkout_id: })
+      request(:get, "#{Rails.configuration.x.creem.checkout_lookup_path}/#{checkout_id}")
     end
 
-    def activate_license(license_key:, device_fingerprint:, device_name:, customer_email: nil)
+    def activate_license(license_key:, instance_name:)
       request(:post, Rails.configuration.x.creem.license_activate_path, body: {
-        license_key:,
-        email: customer_email,
-        device_fingerprint:,
-        device_name:
-      }.compact)
+        key: license_key,
+        instance_name:
+      })
     end
 
-    def validate_license(license_key:, customer_email: nil, device_fingerprint: nil)
-      request(:post, Rails.configuration.x.creem.license_validate_path, body: {
-        license_key:,
-        email: customer_email,
-        device_fingerprint:
-      }.compact)
+    def validate_license(license_key:, instance_id: nil)
+      body = { key: license_key }
+      body[:instance_id] = instance_id if instance_id.present?
+      request(:post, Rails.configuration.x.creem.license_validate_path, body:)
     end
 
-    def deactivate_license(license_key:, customer_email: nil, device_fingerprint: nil, activation_id: nil)
+    def deactivate_license(license_key:, instance_id:)
       request(:post, Rails.configuration.x.creem.license_deactivate_path, body: {
-        license_key:,
-        email: customer_email,
-        device_fingerprint:,
-        activation_id:
-      }.compact)
+        key: license_key,
+        instance_id:
+      })
     end
 
     private
@@ -75,7 +70,7 @@ module Creem
       http.open_timeout = 5
 
       request = build_request(method, uri, body:)
-      request["Authorization"] = "Bearer #{api_key}"
+      request["x-api-key"] = api_key
       request["Content-Type"] = "application/json"
       request["Accept"] = "application/json"
 
@@ -86,8 +81,8 @@ module Creem
 
       raise Creem::Error.new(
         parsed["message"] || parsed["error"] || "Creem request failed",
-        code: "creem_request_failed",
-        status: response.code.to_i >= 500 ? :bad_gateway : :unprocessable_entity,
+        code: error_code_for(response, path),
+        status: error_status_for(response, path),
         http_status: response.code.to_i,
         response_body: parsed
       )
@@ -110,7 +105,7 @@ module Creem
       when :get then Net::HTTP::Get
       when :post then Net::HTTP::Post
       else
-                raise ArgumentError, "Unsupported Creem method: #{method}"
+        raise ArgumentError, "Unsupported Creem method: #{method}"
       end
 
       request = klass.new(uri)
@@ -122,6 +117,25 @@ module Creem
       JSON.parse(raw_body.presence || "{}")
     rescue JSON::ParserError
       { "raw_body" => raw_body.to_s }
+    end
+
+    def error_code_for(response, path)
+      if activation_limit_reached?(response, path)
+        "activation_capacity_reached"
+      else
+        "creem_request_failed"
+      end
+    end
+
+    def error_status_for(response, path)
+      return :conflict if activation_limit_reached?(response, path)
+      return :bad_gateway if response.code.to_i >= 500
+
+      :unprocessable_entity
+    end
+
+    def activation_limit_reached?(response, path)
+      response.code.to_i == 403 && path == Rails.configuration.x.creem.license_activate_path
     end
   end
 end

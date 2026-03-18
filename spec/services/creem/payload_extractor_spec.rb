@@ -2,27 +2,42 @@ require "spec_helper"
 
 RSpec.describe Creem::PayloadExtractor do
   describe ".attributes" do
-    it "extracts normalized attributes from a nested payload" do
+    it "extracts normalized attributes from a Creem desktop-license payload" do
       payload = {
         "event" => {
           "id" => "evt_123",
-          "type" => "checkout.completed"
+          "eventType" => "checkout.completed"
         },
-        "license" => {
-          "license_id" => "lic_123",
-          "license_key" => "AAAAA-BBBBB-CCCCC-DDDDD-EEEEE",
-          "max_activations" => 3,
-          "status" => "valid"
-        },
-        "order" => {
-          "id" => "ord_123",
-          "email" => "USER@EXAMPLE.COM"
-        },
-        "checkout" => {
+        "object" => {
           "id" => "chk_123",
-          "request_id" => "req_123"
-        },
-        "product_id" => "prod_respite_ultimate"
+          "request_id" => "req_123",
+          "product" => {
+            "id" => "prod_respite_ultimate"
+          },
+          "customer" => {
+            "id" => "cus_123",
+            "email" => "USER@EXAMPLE.COM"
+          },
+          "order" => {
+            "id" => "ord_123"
+          },
+          "license_keys" => [
+            {
+              "id" => "lic_123",
+              "key" => "AAAAA-BBBBB-CCCCC-DDDDD-EEEEE",
+              "activation_limit" => 3,
+              "activation_count" => 1,
+              "status" => "active",
+              "expires_at" => "2026-12-31T00:00:00Z",
+              "instance" => {
+                "id" => "inst_123",
+                "name" => "MacBook Pro",
+                "status" => "active"
+              }
+            }
+          ],
+          "units" => 3
+        }
       }
 
       expect(described_class.attributes(payload)).to eq(
@@ -30,12 +45,18 @@ RSpec.describe Creem::PayloadExtractor do
         creem_request_id: "req_123",
         creem_order_id: "ord_123",
         creem_license_id: "lic_123",
+        creem_customer_id: "cus_123",
         license_key: "AAAAA-BBBBB-CCCCC-DDDDD-EEEEE",
-        activation_id: nil,
+        instance_id: "inst_123",
+        instance_name: "MacBook Pro",
+        instance_status: "active",
         customer_email: "user@example.com",
         max_activations: 3,
+        current_activations: 1,
+        expires_at: "2026-12-31T00:00:00Z",
         status: "active",
-        product_ids: [ "prod_respite_ultimate" ]
+        product_ids: [ "prod_respite_ultimate" ],
+        units: 3
       )
     end
   end

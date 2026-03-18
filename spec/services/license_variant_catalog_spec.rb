@@ -13,7 +13,7 @@ RSpec.describe LicenseVariantCatalog do
 
   describe ".find_for_product_ids" do
     it "matches a variant by Creem offer or product id" do
-      variant = described_class.find_for_product_ids(%w[offer_respite_ultimate prod_other])
+      variant = described_class.find_for_product_ids(%w[prod_2jExZvHPDpRScZmxnFoYLJ prod_other])
 
       expect(variant.key).to eq("ultimate")
       expect(variant.max_activations).to eq(3)

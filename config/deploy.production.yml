@@ -1,23 +1,45 @@
 servers:
   web:
-    - prod-app-1.respite.internal
-    - prod-app-2.respite.internal
+    - 192.81.216.87
 
 proxy:
-  host: api.respite.example
+  host: 192.81.216.87
   ssl: false
 
 env:
   clear:
     RAILS_LOG_LEVEL: info
-    FORCE_SSL: "true"
-    MAILER_HOST: api.respite.example
-    CREEM_SUCCESS_URL: https://respite.example/pro/success
-    CREEM_CANCEL_URL: https://respite.example/pro/cancel
+    FORCE_SSL: "false"
+    MAILER_HOST: 192.81.216.87
+    CREEM_SUCCESS_URL: http://192.81.216.87/pro/success
+    CREEM_CANCEL_URL: http://192.81.216.87/pro/cancel
     CLAIM_LINK_BASE_URL: respite://claim
-    ALLOWED_ORIGINS: https://respite.example
+    ALLOWED_ORIGINS: http://192.81.216.87
     WEB_CONCURRENCY: "2"
 
+accessories:
+  postgres:
+    service: postgres
+    image: postgres:17
+    host: 192.81.216.87
+    port: "127.0.0.1:5432:5432"
+    env:
+      clear:
+        POSTGRES_DB: respite_backend_production
+        POSTGRES_USER: respite_backend
+      secret:
+        - POSTGRES_PASSWORD
+    directories:
+      - data:/var/lib/postgresql/data
+  redis:
+    service: redis
+    image: redis:7.4
+    host: 192.81.216.87
+    port: "127.0.0.1:6379:6379"
+    cmd: "redis-server --appendonly yes"
+    directories:
+      - data:/data
+
 boot:
-  limit: 50%
+  limit: 1
   wait: 5

@@ -13,7 +13,7 @@ module Creem
       end
 
       def event_type(payload)
-        first(payload, %w[event_type type event topic], preferred_hashes: [ event_hash(payload) ])&.to_s
+        first(payload, %w[event_type eventType type event topic], preferred_hashes: [ event_hash(payload) ])&.to_s
       end
 
       def checkout_id(payload)
@@ -21,7 +21,7 @@ module Creem
       end
 
       def request_id(payload)
-        first(payload, %w[request_id requestId])
+        first(payload, %w[request_id requestId], preferred_hashes: [ checkout_hash(payload) ])
       end
 
       def order_id(payload)
@@ -29,36 +29,68 @@ module Creem
       end
 
       def license_id(payload)
-        first(payload, %w[license_id id], preferred_hashes: [ license_hash(payload) ])
+        first(payload, %w[license_id id], preferred_hashes: [ primary_license_hash(payload) ])
       end
 
       def license_key(payload)
-        first(payload, %w[license_key key code], preferred_hashes: [ license_hash(payload) ])
+        first(payload, %w[license_key key code], preferred_hashes: [ primary_license_hash(payload) ])
       end
 
-      def activation_id(payload)
-        activation = activation_hash(payload)
-        return if activation.blank?
+      def instance_id(payload)
+        first(payload, %w[instance_id id], preferred_hashes: [ instance_hash(payload) ])
+      end
 
-        first(activation, %w[activation_id instance_id seat_id id])
+      def instance_name(payload)
+        first(payload, %w[instance_name name], preferred_hashes: [ instance_hash(payload) ])
+      end
+
+      def instance_status(payload)
+        first(payload, %w[status state], preferred_hashes: [ instance_hash(payload) ])&.to_s
       end
 
       def customer_email(payload)
         first(
           payload,
           %w[email customer_email],
-          preferred_hashes: [ customer_hash(payload), license_hash(payload), order_hash(payload) ]
+          preferred_hashes: [ customer_hash(payload), primary_license_hash(payload), order_hash(payload) ]
         )&.downcase
       end
 
+      def customer_id(payload)
+        value = first(payload, %w[customer_id id], preferred_hashes: [ customer_hash(payload) ])
+        value&.to_s
+      end
+
       def max_activations(payload)
-        value = first(payload, %w[max_activations activation_limit seats seat_count], preferred_hashes: [ license_hash(payload) ])
+        value = first(
+          payload,
+          %w[max_activations activation_limit seats seat_count quantity units],
+          preferred_hashes: [ primary_license_hash(payload), checkout_hash(payload) ]
+        )
+        Integer(value, exception: false)
+      end
+
+      def current_activations(payload)
+        value = first(
+          payload,
+          %w[current_activations activation_count active_activations],
+          preferred_hashes: [ primary_license_hash(payload) ]
+        )
+        Integer(value, exception: false)
+      end
+
+      def expires_at(payload)
+        first(payload, %w[expires_at expiresAt], preferred_hashes: [ primary_license_hash(payload), checkout_hash(payload) ])
+      end
+
+      def units(payload)
+        value = first(payload, %w[units quantity], preferred_hashes: [ checkout_hash(payload) ])
         Integer(value, exception: false)
       end
 
       def status(payload)
         normalize_status(
-          first(payload, %w[status state], preferred_hashes: [ license_hash(payload), order_hash(payload), checkout_hash(payload) ])
+          first(payload, %w[status state], preferred_hashes: [ primary_license_hash(payload), order_hash(payload), checkout_hash(payload) ])
         )
       end
 
@@ -68,6 +100,14 @@ module Creem
         values.concat(Array(payload[:product_ids]))
         values.concat(Array(payload["products"]).filter_map { |item| item["id"] || item[:id] })
         values.concat(Array(payload["items"]).filter_map { |item| item["product_id"] || item[:product_id] || item["id"] || item[:id] })
+
+        product = payload["product"] || payload[:product]
+        values << (product["id"] || product[:id]) if product.is_a?(Hash)
+        values << product if product.is_a?(String)
+        checkout_product = checkout_hash(payload)&.dig("product") || checkout_hash(payload)&.dig(:product)
+        values << (checkout_product["id"] || checkout_product[:id]) if checkout_product.is_a?(Hash)
+        values << checkout_product if checkout_product.is_a?(String)
+
         values.compact.map(&:to_s).uniq
       end
 
@@ -77,12 +117,18 @@ module Creem
           creem_request_id: request_id(payload),
           creem_order_id: order_id(payload),
           creem_license_id: license_id(payload),
+          creem_customer_id: customer_id(payload),
           license_key: license_key(payload),
-          activation_id: activation_id(payload),
+          instance_id: instance_id(payload),
+          instance_name: instance_name(payload),
+          instance_status: instance_status(payload),
           customer_email: customer_email(payload),
           max_activations: max_activations(payload),
+          current_activations: current_activations(payload),
+          expires_at: expires_at(payload),
           status: status(payload),
-          product_ids: product_ids(payload)
+          product_ids: product_ids(payload),
+          units: units(payload)
         }
       end
 
@@ -104,17 +150,33 @@ module Creem
         end
       end
 
-      def activation_hash(payload)
-        named_hash(payload, %w[activation instance seat]) || first_hash_matching(payload) do |hash|
-          hash.key?("activation_id") || hash.key?("instance_id") || hash.key?("seat_id")
+      def instance_hash(payload)
+        named_hash(payload, %w[instance activation seat]) || first_hash_matching(payload) do |hash|
+          hash.key?("instance_id") || hash.key?("instance_name")
         end
       end
 
       def customer_hash(payload)
-        named_hash(payload, %w[customer buyer user]) || first_hash_matching(payload) { |hash| hash.key?("email") && hash.keys.length <= 5 }
+        named_hash(payload, %w[customer buyer user]) || first_hash_matching(payload) do |hash|
+          hash.key?("email") || hash.key?("customer_id")
+        end
       end
 
       private
+
+      def primary_license_hash(payload)
+        license_key_objects(payload).find { |item| item.is_a?(Hash) } || license_hash(payload)
+      end
+
+      def license_key_objects(payload)
+        objects = []
+        objects.concat(Array(payload["license_keys"]))
+        objects.concat(Array(payload[:license_keys]))
+
+        features = Array(payload["features"]) + Array(payload[:features]) + Array(payload["feature"]) + Array(payload[:feature])
+        objects.concat(features.filter_map { |item| item["license_key"] || item[:license_key] || item["license"] || item[:license] })
+        objects.compact
+      end
 
       def normalize_status(value)
         case value.to_s.downcase
@@ -122,8 +184,12 @@ module Creem
           "active"
         when "pending", "awaiting_payment"
           "pending"
-        when "inactive", "deactivated", "expired"
+        when "inactive", "deactivated"
           "inactive"
+        when "expired"
+          "expired"
+        when "disabled"
+          "disabled"
         when "revoked", "canceled", "cancelled"
           "revoked"
         when "refunded", "chargeback"

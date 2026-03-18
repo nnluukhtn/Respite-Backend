@@ -4,7 +4,7 @@ module Api
       def show
         license = find_license!(params[:reference])
         render json: {
-          license: entitlement_payload(license, device_fingerprint: params[:device_fingerprint]),
+          license: entitlement_payload(license, instance_id: params[:instance_id]),
           creem: {
             creem_product_id: license.creem_product_id,
             creem_order_id: license.creem_order_id,
@@ -16,7 +16,7 @@ module Api
       def activations
         license = find_license!(params[:reference])
         render json: {
-          activations: entitlement_payload(license, device_fingerprint: params[:device_fingerprint])[:devices]
+          activations: entitlement_payload(license, instance_id: params[:instance_id])[:instances]
         }
       end
 
@@ -24,21 +24,28 @@ module Api
         license = find_license!(params[:reference])
         activation = if params[:device_id].present?
           license.device_activations.active.find_by!(public_id: params[:device_id])
-        elsif params[:device_fingerprint].present?
-          license.device_activations.active.find_by!(device_fingerprint: params[:device_fingerprint])
+        elsif params[:instance_record_id].present?
+          license.device_activations.active.find_by!(public_id: params[:instance_record_id])
+        elsif params[:instance_id].present?
+          license.device_activations.active.find_by!(creem_instance_id: params[:instance_id])
+        elsif params[:instance_name].present?
+          license.device_activations.active.find_by!(instance_name: params[:instance_name])
         else
-          raise ApiError.new("device_id or device_fingerprint is required", status: :bad_request, code: "missing_release_target")
+          raise ApiError.new("instance_id, instance_name, or instance_record_id is required", status: :bad_request, code: "missing_release_target")
         end
 
-        if license.license_key.present?
+        if license.license_key.present? && activation.creem_instance_id.present?
           license = Licenses::DeactivationService.new.call(
-            customer_email: license.customer_email,
             license_key: license.license_key,
+            instance_id: activation.creem_instance_id,
             device_activation: activation
           )
         else
           activation.deactivate!
-          license.update!(status: :inactive) if license.device_activations.active.none?
+          license.update!(
+            current_activations_count: [ license.current_activations_count - 1, 0 ].max,
+            status: license.current_activations_count <= 1 ? :inactive : license.status
+          )
         end
 
         render json: {

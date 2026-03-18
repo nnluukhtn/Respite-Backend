@@ -12,7 +12,7 @@ class ClaimToken < ApplicationRecord
     OpenSSL::HMAC.hexdigest("SHA256", secret, token.to_s)
   end
 
-  def self.issue!(license: nil, checkout_session: nil, expires_in: 30.minutes, purpose: "checkout_return", metadata: {})
+  def self.issue!(license: nil, checkout_session: nil, expires_in: 30.minutes, purpose: "desktop_return", metadata: {})
     raw_token = SecureRandom.urlsafe_base64(32)
     record = create!(
       license:,

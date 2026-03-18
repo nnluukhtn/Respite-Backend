@@ -4,7 +4,7 @@ class CheckoutSession < ApplicationRecord
 
   enum :status, {
     pending: "pending",
-    claimable: "claimable",
+    completed: "completed",
     claimed: "claimed",
     expired: "expired",
     failed: "failed",
@@ -16,11 +16,11 @@ class CheckoutSession < ApplicationRecord
 
   before_validation :normalize_customer_email
 
-  def mark_claimable!(license:)
+  def mark_completed!(license:)
     update!(
       license:,
-      status: :claimable,
-      claimable_at: Time.current
+      status: :completed,
+      completed_at: Time.current
     )
   end
 

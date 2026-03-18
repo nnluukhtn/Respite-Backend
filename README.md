@@ -61,6 +61,45 @@ RBENV_VERSION=3.4.2 rbenv exec bundle exec kamal setup -d staging
 RBENV_VERSION=3.4.2 rbenv exec bundle exec kamal app exec -d staging --primary --reuse "bin/rails db:prepare"
 ```
 
+For the current single-host Dockerized setup, PostgreSQL and Redis run as Kamal accessories and the app connects to them over the shared `kamal` Docker network using the service names `postgres` and `redis`. The example `.kamal/secrets-*` files already reflect that.
+
+## Single Droplet Rollout
+
+For a single Ubuntu 24.04 x64 DigitalOcean droplet, the current production config is IP-first and HTTP-only until you have a real domain. Replace the placeholder IP `192.81.216.87` in [config/deploy.production.yml](/Users/luunguyen/Code/personal/Respite/backend/config/deploy.production.yml) with your droplet IP.
+
+Recommended order:
+
+1. If PostgreSQL already exists, keep it and set `DATABASE_URL` in `.kamal/secrets` to that server.
+2. If Redis already exists, keep it and set `REDIS_URL` in `.kamal/secrets` to that server.
+3. If PostgreSQL does not exist yet, boot the Kamal accessory:
+
+```bash
+RBENV_VERSION=3.4.2 rbenv exec bundle exec kamal accessory boot postgres -d production
+```
+
+4. If Redis does not exist yet, boot the Kamal accessory:
+
+```bash
+RBENV_VERSION=3.4.2 rbenv exec bundle exec kamal accessory boot redis -d production
+```
+
+5. Point the app at whichever PostgreSQL and Redis you chose by setting `DATABASE_URL` and `REDIS_URL` in `.kamal/secrets`.
+   If you use the bundled accessories on the same droplet, use:
+
+```bash
+DATABASE_URL=postgres://respite_backend:${POSTGRES_PASSWORD}@postgres:5432/respite_backend_production
+REDIS_URL=redis://redis:6379/0
+```
+
+6. Deploy the app:
+
+```bash
+RBENV_VERSION=3.4.2 rbenv exec bundle exec kamal setup -d production
+RBENV_VERSION=3.4.2 rbenv exec bundle exec kamal app exec -d production --primary --reuse "bin/rails db:prepare"
+```
+
+When you later move to a real domain, switch `proxy.host`, `MAILER_HOST`, `CREEM_SUCCESS_URL`, `CREEM_CANCEL_URL`, and `ALLOWED_ORIGINS`, then re-enable SSL and `FORCE_SSL`.
+
 If you prefer Dockerized Kamal instead of the local gem:
 
 ```bash
@@ -68,7 +107,10 @@ bin/kamal-docker config -d staging
 bin/kamal-docker setup -d staging
 ```
 
-See [docs/kamal-2-deployment-plan.md](/Users/luunguyen/Code/personal/Respite/backend/docs/kamal-2-deployment-plan.md) for the rollout plan and environment decisions still needing real infra values.
+See these docs for deployment details:
+
+- [DigitalOcean droplet deploy guide](/Users/luunguyen/Code/personal/Respite/backend/docs/digitalocean-droplet-deploy-guide.md)
+- [Kamal 2 deployment plan](/Users/luunguyen/Code/personal/Respite/backend/docs/kamal-2-deployment-plan.md)
 
 ## Main Endpoints
 

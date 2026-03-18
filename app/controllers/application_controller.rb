@@ -29,10 +29,10 @@ class ApplicationController < ActionController::API
     }, status: error.status
   end
 
-  def entitlement_payload(license, device_fingerprint: nil)
+  def entitlement_payload(license, instance_id: nil)
     EntitlementPayloadPresenter.new(
       license:,
-      device_fingerprint:
+      instance_id:
     ).as_json
   end
 end

@@ -9,10 +9,15 @@ class WebhookEventProcessor
 
     if purchase_completed?(event_type, payload)
       checkout_session = find_checkout_session(payload)
-      license = synchronizer.upsert_from_checkout_payload!(payload, checkout_session:)
+      checkout_id = checkout_session&.creem_checkout_id || Creem::PayloadExtractor.checkout_id(payload)
+      license = if checkout_id.present?
+        synchronizer.sync_checkout!(checkout_id:, checkout_session:)
+      else
+        synchronizer.upsert_from_checkout_payload!(payload, checkout_session:)
+      end
 
       if checkout_session
-        checkout_session.mark_claimable!(license:)
+        checkout_session.mark_completed!(license:)
         ClaimTokenIssuer.call(
           license:,
           checkout_session:,

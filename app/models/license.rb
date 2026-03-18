@@ -15,12 +15,14 @@ class License < ApplicationRecord
     pending: "pending",
     active: "active",
     inactive: "inactive",
+    expired: "expired",
+    disabled: "disabled",
     revoked: "revoked",
     refunded: "refunded"
   }, validate: true
 
   validates :license_type, presence: true
-  validates :max_activations, numericality: { greater_than: 0 }
+  validates :max_activations, numericality: { greater_than: 0 }, allow_nil: true
 
   before_validation :normalize_customer_email
   before_validation :sync_license_key_metadata
@@ -40,21 +42,23 @@ class License < ApplicationRecord
   end
 
   def current_activations
-    active_device_activations.count
+    current_activations_count
   end
 
-  def active_for_device?(device_fingerprint)
-    return false if device_fingerprint.blank?
+  def active_for_instance?(creem_instance_id)
+    return false if creem_instance_id.blank?
 
-    active_device_activations.exists?(device_fingerprint: device_fingerprint)
+    active_device_activations.exists?(creem_instance_id:)
   end
 
   def seats_available
+    return nil if max_activations.nil?
+
     [ max_activations - current_activations_count, 0 ].max
   end
 
   def revocable?
-    active? || inactive? || pending?
+    active? || inactive? || pending? || expired? || disabled?
   end
 
   private

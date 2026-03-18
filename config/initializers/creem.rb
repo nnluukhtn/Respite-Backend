@@ -1,6 +1,7 @@
 Rails.application.configure do
   config.x.creem = ActiveSupport::OrderedOptions.new
-  config.x.creem.api_base_url = ENV.fetch("CREEM_API_BASE_URL", "https://test-api.creem.io/v1")
+  default_api_base_url = Rails.env.production? ? "https://api.creem.io/v1" : "https://test-api.creem.io/v1"
+  config.x.creem.api_base_url = ENV.fetch("CREEM_API_BASE_URL", default_api_base_url)
   config.x.creem.checkout_path = ENV.fetch("CREEM_CHECKOUT_PATH", "/checkouts")
   config.x.creem.checkout_lookup_path = ENV.fetch("CREEM_CHECKOUT_LOOKUP_PATH", "/checkouts")
   config.x.creem.license_activate_path = ENV.fetch("CREEM_LICENSE_ACTIVATE_PATH", "/licenses/activate")

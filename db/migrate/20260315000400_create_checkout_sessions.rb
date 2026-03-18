@@ -9,8 +9,9 @@ class CreateCheckoutSessions < ActiveRecord::Migration[8.1]
       t.string :creem_request_id
       t.string :creem_product_id
       t.text :hosted_checkout_url
+      t.integer :units, null: false, default: 1
       t.string :customer_email
-      t.datetime :claimable_at
+      t.datetime :completed_at
       t.datetime :claimed_at
       t.datetime :expires_at
       t.text :last_error

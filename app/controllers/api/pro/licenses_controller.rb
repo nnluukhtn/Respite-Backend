@@ -3,49 +3,44 @@ module Api
     class LicensesController < ApplicationController
       def activate
         license = Licenses::ActivationService.new.call(
-          customer_email: params.require(:email),
           license_key: params.require(:license_key),
-          device_fingerprint: params.require(:device_fingerprint),
-          device_name: params.require(:device_name)
+          instance_name: params[:instance_name].presence || params[:device_name].presence || params.require(:instance_name)
         )
 
         render json: {
           entitlement: entitlement_payload(
             license,
-            device_fingerprint: params[:device_fingerprint]
+            instance_id: license.device_activations.active.order(activated_at: :desc).first&.creem_instance_id
           )
         }, status: :created
       end
 
       def status
         license = Licenses::StatusService.new.call(
-          customer_email: params.require(:email),
           license_key: params.require(:license_key),
+          instance_id: params.require(:instance_id),
           refresh: ActiveModel::Type::Boolean.new.cast(params.fetch(:refresh, true))
         )
 
         render json: {
           entitlement: entitlement_payload(
             license,
-            device_fingerprint: params[:device_fingerprint]
+            instance_id: params[:instance_id]
           )
         }
       end
 
       def deactivate
-        target_fingerprint = params[:target_device_fingerprint].presence || params[:device_fingerprint]
-
         license = Licenses::DeactivationService.new.call(
-          customer_email: params.require(:email),
           license_key: params.require(:license_key),
-          device_fingerprint: target_fingerprint,
-          device_id: params[:device_id]
+          instance_id: params[:target_instance_id].presence || params[:instance_id],
+          activation_record_id: params[:instance_record_id].presence || params[:device_id]
         )
 
         render json: {
           entitlement: entitlement_payload(
             license,
-            device_fingerprint: params[:device_fingerprint]
+            instance_id: params[:instance_id]
           )
         }
       end

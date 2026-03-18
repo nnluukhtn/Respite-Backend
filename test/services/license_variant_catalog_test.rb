@@ -10,7 +10,7 @@ class LicenseVariantCatalogTest < ActiveSupport::TestCase
   end
 
   test "finds a variant by Creem product identifiers" do
-    variant = LicenseVariantCatalog.find_for_product_ids(%w[offer_respite_ultimate prod_other])
+    variant = LicenseVariantCatalog.find_for_product_ids(%w[prod_2jExZvHPDpRScZmxnFoYLJ prod_other])
 
     assert_equal "ultimate", variant.key
     assert_equal 3, variant.max_activations

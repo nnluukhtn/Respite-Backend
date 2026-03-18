@@ -3,10 +3,15 @@ module Api
     class CheckoutSessionsController < ApplicationController
       def create
         variant = LicenseVariantCatalog.fetch!(params.require(:variant))
+        units = requested_units_for(variant)
         checkout_session = CheckoutSession.create!(
           variant_key: variant.key,
           customer_email: params[:customer_email],
           creem_product_id: variant.creem_product_id,
+          units:,
+          metadata: {
+            "company_name" => params[:company_name].presence
+          }.compact,
           status: :pending
         )
 
@@ -15,7 +20,9 @@ module Api
           checkout_session:,
           customer_email: checkout_session.customer_email,
           success_url: params[:success_url],
-          cancel_url: params[:cancel_url]
+          cancel_url: params[:cancel_url],
+          units:,
+          metadata: checkout_session.metadata.merge("requested_units" => units)
         )
 
         checkout_session.update!(
@@ -33,6 +40,17 @@ module Api
       rescue Creem::Error => error
         checkout_session&.update!(status: :failed, last_error: error.message) if defined?(checkout_session) && checkout_session&.persisted?
         raise
+      end
+
+      private
+
+      def requested_units_for(variant)
+        return 1 unless variant.custom_capacity
+
+        units = Integer(params[:units] || params[:seats], exception: false)
+        raise ApiError.new("Enterprise checkouts require a positive units value", status: :bad_request, code: "units_required") unless units&.positive?
+
+        units
       end
     end
   end
